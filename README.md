@@ -1,6 +1,6 @@
-# Jamming
+# Jammming
 
-Jammming is a React web application that connects to the Spotify API, allowing users to search for songs, create custom playlists, and save them directly to their Spotify account. [Live Demo](https://devforgely.github.io/flammming)
+Jammming is a React web application that connects to the Spotify API, allowing users to search for songs, create custom playlists, and save them directly to their Spotify account. [Live Demo](https://devforgely.github.io/jammming)
 
 ## Features
 
