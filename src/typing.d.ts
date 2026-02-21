@@ -1,38 +1,56 @@
-type Song = {
+type artist = {
+  items: {
+    name: string
+  }[]
+};
+
+type album = {
+  items: {
+    name: string
+  }[]
+};
+
+type Track = {
   id: string;
   name: string;
-  artist: string;
-  album: string;
+  artists: artist[];
+  albums: album[];
   uri: string;
-}
+};
 
 type SearchProps = {
   onSearch: (term: string) => void;
-}
+};
 
 type TrackProps = {
-  track: Song;
-  onAdd: (track: Song) => void;
-  onRemove: (track: Song) => void;
+  track: Track;
+  onAdd: (track: Track) => void;
+  onRemove: (track: Track) => void;
   isRemoval: boolean;
-}
+};
 
 type TrackListProps = {
-  tracks: Song[];
-  onAdd?: (track: Song) => void;
-  onRemove?: (track: Song) => void;
+  tracks: Track[];
+  onAdd?: (track: Track) => void;
+  onRemove?: (track: Track) => void;
   isRemoval: boolean;
 };
 
 type SearchResultsProps = {
-  searchResults: Song[];
-  onAdd: (track: Song) => void;
+  searchResults: Track[];
+  onAdd: (track: Track) => void;
 };
 
 type PlaylistProps = {
   playlistName: string;
-  playlistTracks: Song[];
-  onRemove: (track: Song) => void;
+  playlistTracks: Track[];
+  onRemove: (track: Track) => void;
   onNameChange: (name: string) => void;
   onSave: () => void;
-}
+};
+
+type SpotifyAuth = {
+  access_token?: string;
+  refresh_token?: string;
+  expires_at?: number; // timestamp in ms 
+};

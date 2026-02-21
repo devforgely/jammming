@@ -4,38 +4,65 @@ import Header from './components/Header/Header';
 import Search from './components/Search/Search';
 import SearchResults from './components/SearchResults/SearchResults';
 import PlayList from './components/PlayList/PlayList';
+import { userAuthentication, getToken, refreshToken, searchTracks, createPlaylist } from './spotify/SpotifyApi';
 
 function App() {
-  const initialSearchResults = [
-  { id: '1', name: 'Xe3', artist: 'Mssingno', album: 'MssingNo EP', uri: 'spotify:track:1' },
-  { id: '2', name: 'Fones', artist: 'Mssingno', album: 'Fones', uri: 'spotify:track:2' },
-  { id: '3', name: 'Brandy Flip', artist: 'Mssingno', album: 'MssingNo EP', uri: 'spotify:track:3' },
-  { id: '4', name: 'Skepta Interlude', artist: 'Mssingno', album: 'MssingNo EP', uri: 'spotify:track:4' },
-  { id: '5', name: 'Inta', artist: 'Mssingno', album: 'MssingNo EP', uri: 'spotify:track:5' },
-];
-
-  const [searchResults, setSearchResults] = useState<Song[]>(initialSearchResults);
+  const [searchResults, setSearchResults] = useState<Track[]>([]);
   const [playlistName, setPlaylistName] = useState<string>('New Playlist');
-  const [playlistTracks, setPlaylistTracks] = useState<Song[]>([]);
+  const [playlistTracks, setPlaylistTracks] = useState<Track[]>([]);
+
+  const verifyUser = async () => {
+    const clientId = import.meta.env.VITE_SPOTIFY_CLIENT_ID || '';
+    const spotifyAuth = localStorage.getItem('spotify_auth');
+
+    if (!spotifyAuth) {
+      const redirectUri = import.meta.env.VITE_SPOTIFY_REDIRECT_URI || '';
+      await userAuthentication(clientId, redirectUri);
+      await getToken(new URLSearchParams(window.location.search).get('code') || '', clientId, redirectUri);
+      return;
+    }
+
+    const spotifyAuthParsed: SpotifyAuth = JSON.parse(localStorage.getItem('spotify_auth') || '{}');
+    // If token still valid → nothing to do
+    // At least 5 seconds before expiration to avoid edge cases where token expires during an API call
+    if (spotifyAuthParsed.expires_at && Date.now() < spotifyAuthParsed.expires_at - 5000) {
+      return;
+    }
+
+    // Token expired → refresh it
+    if (spotifyAuthParsed.refresh_token) {
+      await refreshToken(spotifyAuthParsed.refresh_token, clientId);
+    }
+  }
 
   const search = (term: string) => {
     if (!term) {
       setSearchResults([]);
       return;
     }
-    // TODO: implement search functionality using Spotify API
-    const results: Song[] = []; // Replace with actual search results from Spotify API
-    setSearchResults(results);
-  };
+    verifyUser();
 
-  const addTrack = (track: Song) => {
+    const token = JSON.parse(localStorage.getItem('spotify_auth') || '{}').access_token;
+    if (!token) {
+      alert('Authentication failed. Please refresh the page and try again.');
+      localStorage.removeItem("spotify_auth");
+      return;
+    }
+
+    searchTracks(term, token).then(results => setSearchResults(results)).catch(error => {
+      console.error('Error searching tracks:', error);
+      alert('An error occurred while searching for tracks. Please try again.');
+    })
+  }
+  
+  const addTrack = (track: Track) => {
     if (playlistTracks.find(savedTrack => savedTrack.id === track.id)) {
       return; // Already in playlist
     }
     setPlaylistTracks([...playlistTracks, track]);
   };
 
-  const removeTrack = (track: Song) => {
+  const removeTrack = (track: Track) => {
     setPlaylistTracks(playlistTracks.filter(savedTrack => savedTrack.id !== track.id));
   };
 
@@ -44,9 +71,22 @@ function App() {
   };
 
   const savePlaylist = () => {
-    // In a real app, this would use the Spotify API
-    const trackURIs = playlistTracks.map(track => `spotify:track:${track.id}`);
-    alert(`Mock Save: Saving playlist "${playlistName}" with ${trackURIs.length} tracks to Spotify!`);
+    verifyUser();
+    
+    const token = JSON.parse(localStorage.getItem('spotify_auth') || '{}').access_token;
+    if (!token) {
+      alert('Authentication failed. Please refresh the page and try again.');
+      localStorage.removeItem("spotify_auth");
+      return;
+    }
+
+    const trackUris = playlistTracks.map(track => track.uri);
+    createPlaylist(playlistName, trackUris, token).then(() => {
+      alert('Playlist saved successfully!');
+    }).catch(error => {
+      console.error('Error saving playlist:', error);
+      alert('An error occurred while saving the playlist. Please try again.');
+    });
     
     // Reset after saving
     setPlaylistName('New Playlist');
