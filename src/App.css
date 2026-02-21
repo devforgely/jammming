@@ -3,3 +3,16 @@
   margin: 0 auto;
   padding: 2rem;
 }
+
+.list-content {
+  display: flex;
+  justify-content: space-between;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+@media (max-width: 768px) {
+  .list-content {
+    flex-direction: column;
+  }
+}

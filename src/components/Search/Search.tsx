@@ -2,10 +2,6 @@ import { useState } from "react";
 import "./Search.css";
 
 
-interface SearchProps {
-  onSearch: (term: string) => void;
-}
-
 export default function Search({ onSearch }: SearchProps) {
   const [term, setTerm] = useState('');
 

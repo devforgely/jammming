@@ -1,0 +1,86 @@
+.track {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.8rem 1rem;
+    margin-bottom: 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 12px;
+    transition: all 0.2s ease;
+}
+
+.track:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.track-info-container {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.track-artwork {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.3), rgba(76, 29, 149, 0.5));
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.6);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.track-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.track-info h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.2rem;
+    font-weight: 600;
+    color: #f8fafc;
+}
+
+.track-info p {
+    font-size: 0.85rem;
+    color: #94a3b8;
+}
+
+.dot {
+    margin: 0 0.4rem;
+    opacity: 0.4;
+    font-size: 0.7rem;
+    vertical-align: middle;
+}
+
+.track-action-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    cursor: pointer;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.track-action-btn.add:hover {
+    background: rgba(34, 197, 94, 0.8);
+    border-color: #22c55e;
+    transform: scale(1.1);
+}
+
+.track-action-btn.remove:hover {
+    background: rgba(239, 68, 68, 0.8);
+    border-color: #ef4444;
+    transform: scale(1.1);
+}
