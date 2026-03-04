@@ -7,7 +7,7 @@ export default function Playlist({ playlistName, playlistTracks, onRemove, onNam
   };
 
   return (
-    <div className="panel playlist">
+    <div className="panel">
       <input 
         className="playlist-input" 
         value={playlistName} 

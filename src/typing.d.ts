@@ -6,6 +6,11 @@ type album = {
   name: string;
 };
 
+type Playlist = {
+  id: string;
+  name: string;
+};
+
 type Track = {
   id: string;
   name: string;

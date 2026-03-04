@@ -4,11 +4,16 @@ import Header from './components/Header/Header';
 import Search from './components/Search/Search';
 import SearchResults from './components/SearchResults/SearchResults';
 import PlayList from './components/PlayList/PlayList';
-import { userAuthentication, getToken, searchTracks, createPlaylist } from './spotify/SpotifyApi';
+import { 
+  userAuthentication, getToken, searchTracks, getUserPlaylists,
+  getPlaylistTracks, createPlaylist, updatePlaylist
+} from './spotify/SpotifyApi';
+import PlaylistList from './components/PlaylistList/PlaylistList';
 
 function App() {
   const [searchResults, setSearchResults] = useState<Track[]>([]);
-  const [playlistName, setPlaylistName] = useState<string>('New Playlist');
+  const [playlists, setPlaylists] = useState<Playlist[]>([]);
+  const [playlist, setPlaylist] = useState<Playlist>({id: '', name: 'New Playlist'});
   const [playlistTracks, setPlaylistTracks] = useState<Track[]>([]);
 
   const verifyUser = async () => {
@@ -21,7 +26,7 @@ function App() {
     if (spotifyAuth) {
       const auth = JSON.parse(spotifyAuth);
       if (auth.expires_at && Date.now() < auth.expires_at) {
-        return; // ✅ valid token, resolve immediately
+        return Promise.resolve(auth.access_token); // ✅ valid token, resolve immediately
       }
       // Token expired → clean up and continue
       localStorage.removeItem('spotify_auth');
@@ -31,9 +36,9 @@ function App() {
 
     // Have a code → exchange it and WAIT for the result
     if (code) {
-      await getToken(code, clientId, redirectUri);          // ← await!
+      await getToken(code, clientId, redirectUri);
       window.history.replaceState({}, document.title, window.location.pathname);
-      return; // ✅ token is now in localStorage
+      return Promise.resolve(JSON.parse(localStorage.getItem('spotify_auth') || '{}').access_token);
     }
 
     // No auth and no code → redirect to Spotify
@@ -48,20 +53,14 @@ function App() {
       return;
     }
 
-    verifyUser().then(() => {
-      const token = JSON.parse(localStorage.getItem('spotify_auth') || '{}').access_token;
-      if (!token) {
-        alert('Authentication failed. Please refresh the page and try again.');
-        localStorage.removeItem("spotify_auth");
-        return;
-      }
+    verifyUser().then((token) => {
       return searchTracks(term, token);
     })
     .then(results => {
       setSearchResults(results);
     })
     .catch(error => {
-      console.warn('Warning during search:', error);
+      console.warn(error);
     });
   };
   
@@ -77,30 +76,66 @@ function App() {
   };
 
   const updatePlaylistName = (name: string) => {
-    setPlaylistName(name);
+    setPlaylist(prevPlaylist => ({ ...prevPlaylist, name }));
   };
 
   const savePlaylist = () => {
-    verifyUser().then(() => {
-      const token = JSON.parse(localStorage.getItem('spotify_auth') || '{}').access_token;
-      if (!token) {
-        alert('Authentication failed. Please refresh the page and try again.');
-        localStorage.removeItem("spotify_auth");
-        return;
+    verifyUser().then((token) => {
+      const trackUris = playlistTracks.map(track => track.uri);
+
+      if (playlist.id) {
+        // Update existing playlist
+        updatePlaylist(playlist.id, playlist.name, trackUris, token).then(() => {
+          alert('Playlist updated successfully!');
+          getCurrentPlaylists(); // Refresh playlist list to reflect changes
+        }).catch(error => {
+          console.warn(error);
+        });
+      } else {
+        // Create new playlist
+        createPlaylist(playlist.name, trackUris, token).then(() => {
+          alert('Playlist saved successfully!');
+          getCurrentPlaylists(); // Refresh playlist list to include new playlist
+        }).catch(error => {
+          console.warn(error);
+        });
       }
 
-      const trackUris = playlistTracks.map(track => track.uri);
-      createPlaylist(playlistName, trackUris, token).then(() => {
-        alert('Playlist saved successfully!');
-      }).catch(error => {
-        console.warn('Warning saving playlist:', error);
-      });
-      
       // Reset after saving
-      setPlaylistName('New Playlist');
+      setPlaylist({ id: '', name: 'New Playlist' });
       setPlaylistTracks([]);
+    })
+    .catch(error => {
+      console.warn(error);
     });
   };
+
+  const getCurrentPlaylists = () => {
+    verifyUser().then((token) => {
+      getUserPlaylists(token).then(list => {
+        setPlaylists(list);
+
+        // Reset selected playlist and tracks when refreshing playlist list
+        setPlaylist({ id: '', name: 'New Playlist' });
+        setPlaylistTracks([]);
+      });
+    })
+    .catch(error => {
+      console.warn(error);
+    });
+  }
+
+  const selectPlaylist = (playlist: Playlist) => {
+    verifyUser().then((token) => {
+      getPlaylistTracks(playlist.id, token).then(tracks => {
+        setPlaylist(playlist);
+        setPlaylistTracks(tracks);
+      })
+      .catch(error => {
+        console.warn(error);
+      });
+    });
+  }
 
   return (
     <>
@@ -114,13 +149,22 @@ function App() {
             onAdd={addTrack} 
           />
 
-          <PlayList 
-            playlistName={playlistName}
-            playlistTracks={playlistTracks}
-            onRemove={removeTrack}
-            onNameChange={updatePlaylistName}
-            onSave={savePlaylist}
-          />
+          <div className="playlist-container">
+            <PlayList 
+              playlistName={playlist.name}
+              playlistTracks={playlistTracks}
+              onRemove={removeTrack}
+              onNameChange={updatePlaylistName}
+              onSave={savePlaylist}
+            />
+
+            <PlaylistList
+              selectedId={playlist.id}
+              playlists={playlists}
+              onRefresh={getCurrentPlaylists}
+              onSelect={selectPlaylist}
+            />
+          </div>
         </div>
       </div>
     </>
